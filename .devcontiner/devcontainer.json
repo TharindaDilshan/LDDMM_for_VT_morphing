@@ -1,0 +1,11 @@
+{
+    "name": "iterative_lddmm_container",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "dev",
+    "workspaceFolder": "/home/workspace",
+    "customizations": {
+       "vscode":{
+	  "extensions": ["ms-python.python", "esbenp.prettier-vscode", "eamodio.gitlens"]
+       }
+    }
+}

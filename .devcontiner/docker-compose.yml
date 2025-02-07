@@ -1,0 +1,24 @@
+services: 
+  dev:
+    build: .
+    image: iterative_lddmm
+    container_name: iterative_lddmm_container
+    volumes:
+      # Mount working folder
+      - ../:/home/workspace
+      # Mount data
+      # - ../../data:/home/data
+      # Mount SSH Keys as readonly
+      - ~/.ssh:/root/.ssh:ro
+      # Mount gitconfig
+      #- ~/.gitconfig:/root/.gitconfig:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    entrypoint: bash
+    stdin_open: true
+    tty: true

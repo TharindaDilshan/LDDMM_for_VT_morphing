@@ -1,0 +1,16 @@
+name: iterative_lddmm
+channels:
+#   # - pytorch
+# #   # - conda-forge
+# #   # - https://mirrors.ustc.edu.cn/anaconda/pkgs/free
+  - defaults
+dependencies:
+  - pip:
+      - librosa
+      - numpy
+      - matplotlib
+      - tqdm
+      - torchvision
+      - opencv-python
+      - einops
+prefix: /opt/conda/envs/iterative_lddmm
