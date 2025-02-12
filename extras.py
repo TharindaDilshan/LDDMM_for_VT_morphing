@@ -97,3 +97,47 @@ def Optimize_with_vis(loss, args, niter=10):
     print("Optimization done.")
     
     return args, losses
+
+# Interploate 3D boundary points ()
+# from scipy.interpolate import PchipInterpolator, interp1d
+# def interpolate_points(coords, angle, total_points):
+#     rot_angle = angle * (np.pi / 180)
+#     rot_mat = np.array([[np.cos(rot_angle), np.sin(rot_angle)],
+#                         [-np.sin(rot_angle), np.cos(rot_angle)]])
+
+#     coords_rot = (rot_mat @ coords.T).T
+#     num_points = coords_rot.shape[0]
+
+#     if num_points < total_points:
+#         points_per_segment = total_points // num_points
+        
+#         coords_interp = []
+#         for i in range(num_points - 1):
+#             segment_start = coords_rot[i, :]
+#             segment_end = coords_rot[i + 1, :]
+        
+#             if i == num_points - 2:
+#                 points_per_segment = total_points - (points_per_segment * (num_points - 2))
+        
+#             segment_x = np.linspace(segment_start[0], segment_end[0], points_per_segment)
+#             if segment_start[0] == segment_end[0]:  # Avoid interpolation error
+#                 segment_y = np.linspace(segment_start[1], segment_end[1], points_per_segment)
+#             else:
+#                 interpolator = interp1d([segment_start[0], segment_end[0]], [segment_start[1], segment_end[1]], kind='linear', fill_value='extrapolate')
+#                 segment_y = interpolator(segment_x)
+            
+#             coords_interp.append(np.column_stack((segment_x, segment_y)))
+        
+#         coords_interp = np.vstack(coords_interp)
+#     else:
+#         random_indices = np.random.permutation(num_points)[:total_points]
+#         coords_interp = coords_rot[random_indices, :]
+
+#     coords_interp_rot = coords_interp.copy()
+
+#     rot_mat = np.array([[np.cos(-rot_angle), np.sin(-rot_angle)],
+#                         [-np.sin(-rot_angle), np.cos(-rot_angle)]])
+    
+#     coords_interp = (rot_mat @ coords_interp_rot.T).T
+
+#     return coords_interp

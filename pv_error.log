@@ -1,0 +1,4 @@
+ERROR: In vtkXOpenGLRenderWindow.cxx, line 651
+vtkXOpenGLRenderWindow (0x141aaa00): Cannot create GLX context.  Aborting.
+
+

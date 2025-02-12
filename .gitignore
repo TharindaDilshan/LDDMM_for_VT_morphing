@@ -2,5 +2,6 @@
 *.pt
 *.mat
 *.npy
+*.ply
 .ipynb_checkpoints/
 __pycache__/

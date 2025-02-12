@@ -3,7 +3,8 @@ RUN apt-get update && apt-get install -y \
     git \
     ffmpeg \
     libsm6 \
-    libxext6
+    libxext6 \
+    x11-apps
 
 RUN conda install opencv
 RUN conda install matplotlib

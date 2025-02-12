@@ -33,7 +33,7 @@ def GaussLinKernel(sigma):
 
 # Custom ODE solver, for ODE systems which are defined on tuples
 def RalstonIntegrator():
-    def f(ODESystem, x0, nt, deltat=1.0):
+    def f(ODESystem, x0, nt=51, deltat=1.0):
         x = tuple(map(lambda x: x.clone(), x0))
         dt = deltat / nt
         l = [x]
@@ -74,19 +74,27 @@ def Shooting(p0, q0, K, nt=10, Integrator=RalstonIntegrator()):
     return Integrator(HamiltonianSystem(K), (p0, q0), nt)
 
 
-def Flow(x0, p0, q0, K, deltat=1.0, Integrator=RalstonIntegrator()):
+def Flow(x0, p0, q0, K, nt=10, deltat=1.0, Integrator=RalstonIntegrator()):
     HS = HamiltonianSystem(K)
 
     def FlowEq(x, p, q):
         return (K(x, q, p),) + HS(p, q)
 
-    return Integrator(FlowEq, (x0, p0, q0), deltat)[0]
+    return Integrator(FlowEq, (x0, p0, q0), nt, deltat)[0]
 
 def LDDMMloss(K, dataloss, gamma=0):
     def loss(p0, q0):
         p, q = Shooting(p0, q0, K)[-1]
         
         return gamma * Hamiltonian(K)(p0, q0) + dataloss(q)
+
+    return loss
+
+def SmallDefloss(K, dataloss, gamma=0.3):
+    def loss(p0, q0):
+        v = K(q0,q0,p0)
+        q = q0 + v
+        return gamma * (v*p0).sum() + dataloss(q)
 
     return loss
 
@@ -112,10 +120,25 @@ class LDDMM_def:
     def shoot(self):
         return Shooting(self.init_mom, self.init_pos, self.kernel)
         
-    def flow(self, x0):
+    def flow(self, x0, nt=10):
         x0 = torch.tensor(x0, dtype=torchdtype, device=torchdeviceId)
 
-        return Flow(x0, self.init_mom, self.init_pos, self.kernel)
+        return Flow(x0, self.init_mom, self.init_pos, self.kernel, nt)
+    
+class SmallDef_def:
+    def __init__(self,p0,q0,Kv):
+        self.init_mom = p0
+        self.init_pos = q0
+        self.kernel = Kv
+    def shoot(self,t=1):
+        q0, p0 = self.init_pos, self.init_mom
+        res = q0 + t*self.kernel(q0,q0,p0)
+        return np.array(res.data.cpu())
+    def flow(self, x0, t=1):
+        x0 = torch.tensor(x0, dtype=torchdtype, device=torchdeviceId)
+        q0, p0 = self.init_pos, self.init_mom
+        res = x0 + t*self.kernel(x0,q0,p0)
+        return np.array(res.data.cpu())
     
 def Optimize(loss,x):
     optimizer = torch.optim.LBFGS([x], max_eval=10, max_iter=10)
@@ -148,3 +171,28 @@ def LDDMM_Optimize(q0, dataloss, sigma):
     Optimize(lambda p0 : loss(p0,q0), p0)
             
     return LDDMM_def(p0,q0,Kv)
+
+def SmallDef_Optimize(q0,dataloss,sigma):
+    
+    #####################################################################
+    # Define SmallDef functional
+    sigma = torch.tensor([sigma], dtype=torchdtype, device=torchdeviceId)
+    Kv = GaussKernel(sigma=sigma)
+    loss = SmallDefloss(Kv, dataloss)
+
+    # initialize momentum vectors
+    p0 = torch.zeros(q0.shape, dtype=torchdtype, device=torchdeviceId, requires_grad=True)
+    
+    # Perform optimization
+    Optimize(lambda p0 : loss(p0,q0), p0)
+            
+    return SmallDef_def(p0,q0,Kv)
+
+def MatchPoints(VS, VT, sigma=20, method=LDDMM_Optimize):        
+    VS = torch.tensor(VS, dtype=torchdtype, device=torchdeviceId)
+    VT = torch.tensor(VT, dtype=torchdtype, device=torchdeviceId)
+    q0 = VS.clone().detach().to(dtype=torchdtype, device=torchdeviceId).requires_grad_(True)
+    VT = VT.clone().detach().to(dtype=torchdtype, device=torchdeviceId)
+    dataloss = lossMeas(VT, EnergyKernel())
+    
+    return method(q0, dataloss, sigma)
